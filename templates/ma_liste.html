@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Ma Liste - Le_Backlog</title>
+</head>
+<body>
+    <!-- Bandeau de navigation -->
+    <header>
+        <nav class="navbar">
+            <div class="nav-left">
+                <a href="/" class="app-title">Le_Backlog</a>
+                {{ma_liste_link}} {{admin_link}}
+            </div>
+            <div class="nav-right">
+                {{login_actions}}
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <div class="content-layout">
+            <!-- Section principale avec les jeux -->
+            <section class="games-section">
+                <h1>Ma Liste de Jeux</h1>
+                <div class="games-list">
+                    {{liste_jeux}}
+                </div>
+            </section>
+
+            <!-- Sidebar droite avec les menus -->
+            <aside class="right-sidebar">
+                <!-- Menu Tirage au sort -->
+                <div class="sidebar-menu">
+                    <h3>Tirage au sort</h3>
+                    <p>Laisse le hasard choisir ton prochain jeu !</p>
+                    <button onclick="tirerAuSort()" class="menu-btn">Tirer au sort</button>
+                    <div id="resultat-tirage" class="hidden" style="margin-top: 30px;">
+                        <h3>Résultat du tirage :</h3>
+                        <div class="jeu-details">
+                            <h4 id="jeu-titre"></h4>
+                            <div id="jeu-info">
+                                <p id="jeu-description"></p>
+                                <div class="badges">
+                                    <span id="jeu-genre" class="badge"></span>
+                                    <span id="jeu-temps" class="badge"></span>
+                                    <span id="jeu-plateforme" class="badge"></span>
+                                    <span id="jeu-editeur" class="badge"></span>
+                                    <span id="jeu-etat" class="badge"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Menu Stats -->
+                <div class="sidebar-menu">
+                    <h3>Statistiques</h3>
+                    <div class="stats-content">
+                        <div class="stat-item">
+                            <span class="stat-label">Nombre de jeux :</span>
+                            <span id="nb-jeux" class="stat-value">0</span>
+                        </div>
+                        <div class="charts-container">
+                            <div class="chart-wrapper">
+                                <div id="etatChart"></div>
+                            </div>
+                            <div class="chart-wrapper podium-wrapper">
+                                <h3>Top des genres</h3>
+                                <div id="podium-container">
+                                    <div class="podium">
+                                        <div class="podium-item silver">
+                                            <div class="genre-count">2e</div>
+                                            <div class="podium-block"></div>
+                                            <div class="genre-name"></div>
+                                        </div>
+                                        <div class="podium-item gold">
+                                            <div class="genre-count">1er</div>
+                                            <div class="podium-block"></div>
+                                            <div class="genre-name"></div>
+                                        </div>
+                                        <div class="podium-item bronze">
+                                            <div class="genre-count">3e</div>
+                                            <div class="podium-block"></div>
+                                            <div class="genre-name"></div>
+                                        </div>
+                                    </div>
+                                    <div class="other-genres">
+                                        <h4>Autres genres</h4>
+                                        <div id="other-genres-list"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Menu Jeux partagés -->
+                <div class="sidebar-menu">
+                    <h3>Jeux partagés</h3>
+                    <div id="shared-games" class="shared-games-list">
+                        <!-- Liste des jeux partagés -->
+                    </div>
+                </div>
+
+                <!-- Menu Ajout manuel -->
+                <div class="sidebar-menu">
+                    <h3>Ajouter un jeu</h3>
+                    <p>Ajoute un jeu manuellement à ta liste</p>
+                    <button onclick="openAjoutManuel()" class="menu-btn">Nouveau jeu</button>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <!-- Pop-up Partage -->
+    <div id="popup-partage" class="popup-bg" style="display:none;">
+        <div class="popup">
+            <span class="close-btn" onclick="closePopupPartage()">&times;</span>
+            <h2>Partager ce jeu</h2>
+            <form id="popup-partage-form">
+                <div id="popup-partage-error" style="color:red"></div>
+                <input type="hidden" id="jeu-id-partage" name="jeu_id">
+                <div class="field-group">
+                    <label for="cible-pseudo">Nom d'utilisateur du destinataire</label>
+                    <input id="cible-pseudo" name="cible_pseudo" type="text" required placeholder="Ex: Alice">
+                </div>
+                <div class="field-group">
+                    <label for="message-partage">Message (optionnel)</label>
+                    <textarea id="message-partage" name="message" rows="3" placeholder="Un petit message pour accompagner le partage..."></textarea>
+                </div>
+                <div class="popup-actions">
+                    <button type="submit" class="btn">Partager</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Pop-up Ajout Manuel -->
+    <div id="popup-ajout-manuel" class="popup-bg" style="display:none;">
+        <div class="popup">
+            <span class="close-btn" onclick="closeAjoutManuel()">&times;</span>
+            <h2>Ajouter un jeu manuellement</h2>
+            <form id="popup-ajout-manuel-form">
+                <div id="popup-ajout-manuel-error" style="color:red"></div>
+                
+                <div class="field-group">
+                    <label for="titre-manuel">Titre du jeu *</label>
+                    <input id="titre-manuel" name="titre" type="text" required maxlength="100" placeholder="Ex: The Legend of Zelda">
+                </div>
+                
+                <div class="field-group">
+                    <label for="description-manuel">Description</label>
+                    <textarea id="description-manuel" name="description" rows="3" maxlength="400" placeholder="Une courte description du jeu..."></textarea>
+                </div>
+                
+                <div class="field-row">
+                    <div class="field-group">
+                        <label for="genre-manuel">Genre</label>
+                        <input id="genre-manuel" name="genre" type="text" placeholder="Ex: RPG, Action...">
+                    </div>
+                    <div class="field-group">
+                        <label for="editeur-manuel">Éditeur</label>
+                        <input id="editeur-manuel" name="editeur" type="text" placeholder="Ex: Nintendo">
+                    </div>
+                </div>
+                
+                <div class="field-group">
+                    <label for="plateforme-manuel">Plateforme</label>
+                    <input id="plateforme-manuel" name="plateforme" type="text" placeholder="Ex: Switch, PS5...">
+                </div>
+                
+                <div class="popup-actions">
+                    <button type="submit" class="btn">Ajouter à ma liste</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+    // Définir l'ordre des états pour l'affichage du tooltip
+    const etats = ["Non commencé", "En cours", "Terminé", "Abandonné"];
+    
+    function getProchainEtat(etatActuel) {
+        const index = etats.indexOf(etatActuel);
+        return etats[(index + 1) % etats.length];
+    }
+
+    async function changerEtat(jeu_id) {
+        let r = await fetch('/changer_etat_jeu_ajax', {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ jeu_id })
+        });
+        let res = await r.json();
+        if(res.success){
+            window.location.reload();
+        } else {
+            alert("Erreur : " + res.error);
+        }
+    }
+
+    async function supprimerJeu(jeu_id) {
+        if(!confirm("Voulez-vous vraiment supprimer ce jeu de votre liste ?")) return;
+        
+        let r = await fetch('/supprimer_jeu_perso_ajax', {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ jeu_id })
+        });
+        let res = await r.json();
+        if(res.success){
+            window.location.reload();
+        } else {
+            alert("Erreur : " + res.error);
+        }
+    }
+
+    function openPopupPartage(jeu_id) {
+        document.getElementById('jeu-id-partage').value = jeu_id;
+        document.getElementById('popup-partage').style.display = 'flex';
+        document.getElementById('popup-partage-error').textContent = '';
+        document.getElementById('popup-partage-form').reset();
+    }
+
+    function closePopupPartage() {
+        document.getElementById('popup-partage').style.display = 'none';
+    }
+
+    // Gestion du formulaire de partage
+    document.getElementById('popup-partage-form').onsubmit = async function(e) {
+        e.preventDefault();
+        let data = {
+            jeu_id: document.getElementById('jeu-id-partage').value,
+            cible_pseudo: document.getElementById('cible-pseudo').value,
+            message: document.getElementById('message-partage').value
+        };
+        
+        let r = await fetch('/partager_jeu_ajax', {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(data)
+        });
+        
+        let res = await r.json();
+        if(res.success) {
+            closePopupPartage();
+            alert("Jeu partagé avec succès !");
+        } else {
+            document.getElementById('popup-partage-error').textContent = res.error;
+        }
+    };
+
+    // Fonction pour le tirage au sort
+    async function tirerAuSort() {
+        try {
+            let r = await fetch('/tirer_au_sort_ajax');
+            let res = await r.json();
+            const resultat = document.getElementById('resultat-tirage');
+            if(res.success) {
+                afficherJeuTire(res.jeu);
+            } else {
+                resultat.innerHTML = `<div class="tirage-error">${res.error}</div>`;
+            }
+        } catch(e) {
+            document.getElementById('resultat-tirage').innerHTML = 
+                '<div class="tirage-error">Erreur lors du tirage</div>';
+        }
+    }
+
+    function openAjoutManuel() {
+        document.getElementById('popup-ajout-manuel').style.display = 'flex';
+        document.getElementById('popup-ajout-manuel-error').textContent = '';
+        document.getElementById('popup-ajout-manuel-form').reset();
+    }
+
+    function closeAjoutManuel() {
+        document.getElementById('popup-ajout-manuel').style.display = 'none';
+    }
+
+    // Gestion du formulaire d'ajout manuel
+    document.getElementById('popup-ajout-manuel-form').onsubmit = async function(e) {
+        e.preventDefault();
+        
+        let data = {
+            titre: document.getElementById('titre-manuel').value.trim(),
+            description: document.getElementById('description-manuel').value.trim(),
+            genre: document.getElementById('genre-manuel').value.trim(),
+            editeur: document.getElementById('editeur-manuel').value.trim(),
+            plateforme: document.getElementById('plateforme-manuel').value.trim()
+        };
+        
+        try {
+            let r = await fetch('/ajouter_jeu_manuel_ajax', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+            
+            let res = await r.json();
+            if (res.success) {
+                closeAjoutManuel();
+                window.location.reload(); // Recharger la page pour voir le nouveau jeu
+            } else {
+                document.getElementById('popup-ajout-manuel-error').textContent = res.error || "Une erreur est survenue";
+            }
+        } catch (error) {
+            console.error('Erreur:', error);
+            document.getElementById('popup-ajout-manuel-error').textContent = "Une erreur est survenue";
+        }
+    };
+
+    // Fonction pour charger les statistiques avec graphiques
+    async function chargerStats() {
+        const chartDiv = document.getElementById('etatChart');
+        try {
+            const response = await fetch('/stats_liste_ajax');
+            const data = await response.json();
+            
+            if (data.success) {
+                const stats = data.stats;
+                document.getElementById('nb-jeux').textContent = stats.total;
+
+                // Afficher le graphique Matplotlib si disponible
+                if (data.chart && stats.total > 0) {
+                    chartDiv.innerHTML = `<img src="data:image/png;base64,${data.chart}" style="width: 100%; height: auto;">`;
+                } else {
+                    chartDiv.innerHTML = '<p style="text-align: center; color: var(--text-light);">Aucune donnée disponible</p>';
+                }
+
+                // Affichage du podium des genres
+                const podiumItems = document.querySelectorAll('.podium-item');
+                const otherGenresList = document.getElementById('other-genres-list');
+                
+                // Réinitialiser les contenus
+                podiumItems.forEach(item => {
+                    item.querySelector('.genre-name').textContent = '-';
+                    item.querySelector('.genre-count').textContent = '0';
+                    item.style.opacity = '0.5';
+                    item.querySelector('.podium-block').style.height = '0px';
+                });
+                otherGenresList.innerHTML = '';
+
+                if (stats.genres_data && stats.genres_data.length > 0) {
+                    // Calculer la hauteur maximale pour le podium
+                    const maxCount = Math.max(...stats.genres_data.slice(0, 3).map(g => g.count));
+                    
+                    // Remplir le podium (top 3)
+                    stats.genres_data.slice(0, 3).forEach((genre, index) => {
+                        // Réorganiser pour le podium (2e, 1er, 3e)
+                        const podiumIndex = index === 0 ? 1 : index === 1 ? 0 : 2;
+                        const item = podiumItems[podiumIndex];
+                        
+                        item.querySelector('.genre-name').textContent = genre.genre;
+                        item.querySelector('.genre-count').textContent = genre.count;
+                        item.style.opacity = '1';
+                        
+                        // Calculer la hauteur relative du bloc
+                        const height = (genre.count / maxCount) * 150; // 150px max height
+                        item.querySelector('.podium-block').style.height = `${height}px`;
+                    });
+
+                    // Afficher les autres genres
+                    if (stats.genres_data.length > 3) {
+                        const otherGenres = stats.genres_data.slice(3).map(g => 
+                            `<div class="other-genre-item">
+                                <span class="genre-name">${g.genre}</span>
+                                <span class="genre-count">${g.count}</span>
+                            </div>`
+                        ).join('');
+                        otherGenresList.innerHTML = otherGenres;
+                    }
+                } else {
+                    document.querySelector('.podium-wrapper h3').textContent = 'Aucun genre disponible';
+                }
+            }
+        } catch (error) {
+            document.getElementById('etatChart').innerHTML = '<p style="text-align: center; color: var(--text-light);">Erreur lors du chargement des statistiques</p>';
+        }
+    }
+
+    // Charger les stats au chargement de la page
+    window.onload = function() {
+        chargerStats();
+        chargerJeuxPartages();
+    };
+
+    // Charger les jeux partagés
+    async function chargerJeuxPartages() {
+        try {
+            let r = await fetch('/jeux_partages_ajax');
+            let res = await r.json();
+            if(res.success) {
+                const container = document.getElementById('shared-games');
+                if (!res.jeux || res.jeux.length === 0) {
+                    container.innerHTML = '<p class="empty-list">Aucun jeu partagé</p>';
+                    return;
+                }
+
+                container.innerHTML = res.jeux.map(j => `
+                    <div class="shared-game">
+                        <div class="shared-game-header">
+                            <h4 class="shared-game-title">${j.titre}</h4>
+                            <span class="shared-date">${j.Date_partage}</span>
+                        </div>
+                        <div class="shared-game-info">
+                            Partagé par <strong>${j.expediteur}</strong>
+                        </div>
+                        ${j.description ? `
+                            <div class="shared-game-details">
+                                <p>${j.description}</p>
+                            </div>
+                        ` : ''}
+                        <div class="shared-game-details">
+                            <div class="badge-row">
+                                ${j.genre ? `<span class="badge" style="${getStyleGenre(j.genre)}">${j.genre}</span>` : ''}
+                            </div>
+                            <div class="badge-row" style="margin-top: 8px">
+                                ${j.editeur ? `<span class="badge">${j.editeur}</span>` : ''}
+                                ${j.plateforme ? `<span class="badge" style="margin-left: 8px">${j.plateforme}</span>` : ''}
+                                ${j.temps_moyen_termine ? `<span class="badge" style="margin-left: 8px; ${getStyleTemps(j.temps_moyen_termine)}">${j.temps_moyen_termine}h</span>` : ''}
+                            </div>
+                        </div>
+                        ${j.Message ? `
+                            <div class="shared-game-message">
+                                "${j.Message}"
+                            </div>
+                        ` : ''}
+                        <div class="shared-game-actions">
+                            <button onclick="ajouterJeuPartage('${j.liste_perso_id}')" class="btn-accept">Ajouter à ma liste</button>
+                            <button onclick="supprimerJeuPartage('${j.partage_id}')" class="btn-delete">Supprimer</button>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                console.error('Erreur:', res.error);
+            }
+        } catch (error) {
+            console.error('Erreur:', error);
+        }
+    }
+
+    // Supprimer un jeu partagé
+    async function supprimerJeuPartage(partageId) {
+        if (!confirm('Voulez-vous vraiment supprimer ce jeu partagé ?')) return;
+
+        try {
+            let r = await fetch('/supprimer_jeu_partage_ajax', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({partage_id: partageId})
+            });
+            let res = await r.json();
+            
+            if (res.success) {
+                chargerJeuxPartages(); // Recharger la liste
+            } else {
+                alert(res.error || 'Une erreur est survenue');
+            }
+        } catch (error) {
+            console.error('Erreur:', error);
+            alert('Une erreur est survenue');
+        }
+    }
+
+    // Ajouter un jeu partagé à sa liste
+    async function ajouterJeuPartage(listePersoId) {
+        try {
+            let r = await fetch('/ajouter_jeu_partage_ajax/' + listePersoId);
+            let res = await r.json();
+            
+            if (res.success) {
+                alert('Jeu ajouté à votre liste !');
+                window.location.reload();
+            } else {
+                alert(res.error || 'Une erreur est survenue');
+            }
+        } catch (error) {
+            console.error('Erreur:', error);
+            alert('Une erreur est survenue');
+        }
+    }
+
+    // Fonctions utilitaires pour les styles
+    function getStyleGenre(genre) {
+        return `background-color: var(--primary); color: white;`;
+    }
+
+    function getStyleTemps(temps) {
+        if (temps <= 10) return 'background-color: #28a745; color: white;';
+        if (temps <= 20) return 'background-color: #ffc107; color: black;';
+        return 'background-color: #dc3545; color: white;';
+    }
+
+    function afficherJeuTire(jeu) {
+        const resultat = document.getElementById('resultat-tirage');
+        const titre = document.getElementById('jeu-titre');
+        const description = document.getElementById('jeu-description');
+        const genre = document.getElementById('jeu-genre');
+        const temps = document.getElementById('jeu-temps');
+        const plateforme = document.getElementById('jeu-plateforme');
+        const editeur = document.getElementById('jeu-editeur');
+        const etat = document.getElementById('jeu-etat');
+
+        titre.textContent = jeu.titre;
+        description.textContent = jeu.description || 'Aucune description disponible';
+        genre.textContent = jeu.genre || 'Genre inconnu';
+        temps.textContent = jeu.temps ? `${jeu.temps}h` : 'Durée inconnue';
+        plateforme.textContent = jeu.plateforme || 'Plateforme inconnue';
+        editeur.textContent = jeu.editeur || 'Éditeur inconnu';
+
+        if (jeu.from_liste_perso) {
+            etat.textContent = jeu.etat;
+            etat.className = `badge etat-${jeu.etat.toLowerCase().replace(' ', '-')}`;
+        } else {
+            etat.textContent = '';
+        }
+
+        // Appliquer les couleurs appropriées aux badges
+        appliquerCouleursGenre(genre, jeu.genre);
+        appliquerCouleursDuree(temps, jeu.temps);
+
+        resultat.classList.remove('hidden');
+        resultat.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function appliquerCouleursGenre(element, genre) {
+        // Ajouter les classes de couleur en fonction du genre
+        element.className = 'badge';
+        if (genre) {
+            element.classList.add(`genre-${genre.toLowerCase().replace(' ', '-')}`);
+        }
+    }
+
+    function appliquerCouleursDuree(element, temps) {
+        element.className = 'badge';
+        if (!temps) return;
+        
+        if (temps <= 5) element.classList.add('duree-tres-courte');
+        else if (temps <= 10) element.classList.add('duree-courte');
+        else if (temps <= 20) element.classList.add('duree-moyenne-courte');
+        else if (temps <= 40) element.classList.add('duree-moyenne');
+        else if (temps <= 60) element.classList.add('duree-moyenne-longue');
+        else if (temps <= 100) element.classList.add('duree-longue');
+        else element.classList.add('duree-tres-longue');
+    }
+    </script>
+
+<style>
+    /* Variables de couleurs */
+    :root {
+        --primary: #4b5bff;
+        --primary-dark: #3644cc;
+        --secondary: #2a3142;
+        --accent: #ff6b6b;
+        --success: #4CAF50;
+        --background: #1a1d2a;
+        --card-bg: #242837;
+        --text: #e1e3e9;
+        --text-light: #9ba1b0;
+        --nav-bg: #12141c;
+        --auth-btn: #ff6b6b;
+        --auth-btn-hover: #ff5252;
+        --login-btn: #4b5bff;
+        --login-btn-hover: #3644cc;
+    }
+
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0; padding: 0;
+        background: var(--background);
+        color: var(--text);
+    }
+
+    /* Bandeau */
+    .navbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--nav-bg);
+        color: white;
+        padding: 0 30px;
+        height: 60px;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 10;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+    }
+    .navbar .nav-left, .navbar .nav-right {
+        display: flex;
+        align-items: center;
+        height: 100%;
+        gap: 24px;
+    }
+    .navbar a {
+        color: #fff;
+        text-decoration: none;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+    }
+    .navbar a.app-title {
+        font-size: 1.5em;
+        display: flex;
+        align-items: center;
+        height: 60px;
+        margin: -2px 0 0 -8px;
+        background: linear-gradient(45deg, #fff, #e0e3ff);
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: 0 2px 10px rgba(255,255,255,0.1);
+        padding: 0;
+    }
+    .navbar .nav-right {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        height: 100%;
+    }
+    .user-info {
+        display: flex;
+        align-items: center;
+        height: 36px;
+        background: rgba(255,255,255,0.1);
+        padding: 0 15px;
+        border-radius: 6px;
+    }
+    .user-info i {
+        margin-right: 8px;
+    }
+    .navbar .nav-right .btn {
+        height: 36px;
+        padding: 0 18px;
+        display: flex;
+        align-items: center;
+        background: var(--auth-btn);
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        font-weight: 500;
+        transition: all 0.2s;
+        margin: 0;
+    }
+    .navbar .nav-right .btn:hover {
+        background: var(--auth-btn-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(255,107,107,0.2);
+    }
+    .navbar .nav-right .btn-login {
+        height: 36px;
+        padding: 0 18px;
+        display: flex;
+        align-items: center;
+        background: var(--login-btn);
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        font-weight: 500;
+        transition: all 0.2s;
+        margin: 0;
+        text-decoration: none;
+    }
+    .navbar .nav-right .btn-login:hover {
+        background: var(--login-btn-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(75,91,255,0.2);
+    }
+    .navbar .nav-right .btn-register {
+        height: 36px;
+        padding: 0 18px;
+        display: flex;
+        align-items: center;
+        background: var(--login-btn);
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        font-weight: 500;
+        transition: all 0.2s;
+        margin: 0;
+        text-decoration: none;
+    }
+    .navbar .nav-right .btn-register:hover {
+        background: var(--login-btn-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(75,91,255,0.2);
+    }
+
+    /* Ajustement du contenu principal */
+    main {
+        margin-top: 60px;
+        padding: 20px;
+        max-width: 1800px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    /* Styles communs */
+    .btn {
+        display: inline-block;
+        background: var(--primary);
+        color: #fff;
+        border-radius: 6px;
+        padding: 12px 28px;
+        text-decoration: none;
+        font-weight: 500;
+        margin-top: 12px;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+    }
+    .btn:hover {
+        background: var(--primary-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(75,91,255,0.2);
+    }
+
+    /* Styles spécifiques à la page Ma Liste */
+    .ma-liste-header {
+        text-align: center;
+        padding: 20px;
+        margin-bottom: 30px;
+    }
+    .ma-liste-header h1 {
+        font-size: 2em;
+        margin: 0;
+        background: linear-gradient(45deg, var(--primary), #6574ff);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .games-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: center;
+        margin: 20px auto;
+        max-width: 1800px;
+        padding: 0 20px;
+    }
+    .game-card {
+        background: var(--card-bg);
+        border-radius: 12px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        padding: 22px 18px 18px;
+        width: 280px;
+        min-height: 180px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        position: relative;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(255,255,255,0.05);
+    }
+    .game-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        border-color: rgba(75,91,255,0.3);
+    }
+    .game-card h3 {
+        color: var(--text);
+        margin: 0 0 12px;
+        font-size: 1.2em;
+    }
+    .game-card p {
+        color: var(--text-light);
+        margin: 6px 0;
+        font-size: 0.95em;
+        line-height: 1.4;
+    }
+    .game-card strong {
+        color: var(--text);
+    }
+    .card-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+    }
+    .btn-etat, .btn-suppr {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-etat {
+        background: var(--primary);
+        color: white;
+        flex: 2;
+    }
+    .btn-etat:hover {
+        background: var(--primary-dark);
+        transform: translateY(-1px);
+    }
+    .btn-suppr {
+        background: var(--accent);
+        color: white;
+        flex: 1;
+    }
+    .btn-suppr:hover {
+        background: #ff5252;
+        transform: translateY(-1px);
+    }
+
+    /* Message liste vide */
+    .empty-list {
+        text-align: center;
+        color: var(--text-light);
+        font-size: 1.1em;
+        margin: 40px 0;
+        padding: 20px;
+        background: var(--card-bg);
+        border-radius: 8px;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .navbar {
+            padding: 0 15px;
+        }
+        .games-list {
+            padding: 0 15px;
+        }
+        .game-card {
+            width: 100%;
+        }
+    }
+
+    /* Styles pour le popup de partage */
+    .popup-bg {
+        position: fixed; top:0; left:0; width:100vw; height:100vh;
+        background: rgba(0,0,0,0.7);
+        z-index: 20; 
+        display: flex; 
+        justify-content: center; 
+        align-items: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    .popup-bg[style*="flex"] {
+        opacity: 1;
+    }
+    .popup {
+        background: var(--card-bg);
+        color: var(--text);
+        border-radius: 12px; 
+        padding: 35px 30px 25px;
+        min-width: 340px;
+        max-width: 90%;
+        box-shadow: 0 4px 25px rgba(0,0,0,0.15);
+        text-align: center;
+        position: relative;
+        transform: translateY(20px);
+        transition: transform 0.3s ease;
+        margin: 0 auto;  /* Centre horizontalement */
+    }
+    .popup-bg[style*="flex"] .popup {
+        transform: translateY(0);
+    }
+    .popup h2 {
+        margin: 0 0 25px;
+        background: linear-gradient(45deg, var(--primary), #6574ff);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-size: 1.5em;
+        font-weight: bold;
+    }
+    .close-btn {
+        position: absolute;
+        top: 15px; right: 20px; 
+        font-size: 24px;
+        cursor: pointer;
+        color: #666;
+        transition: color 0.2s;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+    }
+    .close-btn:hover {
+        color: #333;
+        background: #f0f0f0;
+    }
+    .popup input, .popup textarea {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 10px 12px;
+        margin: 8px 0;
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 6px;
+        font-size: 0.95em;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        background: var(--background);
+        color: var(--text);
+    }
+    .popup textarea {
+        min-height: 80px;
+        margin: 8px 0 12px;
+    }
+    .popup input:focus, .popup textarea:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(75,91,255,0.1);
+    }
+    .popup-actions { 
+        margin-top: 25px;
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+    }
+    .popup-actions button {
+        background: var(--primary);
+        color: #fff;
+        border: none;
+        padding: 10px 24px;
+        border-radius: 6px;
+        font-size: 0.95em;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-weight: 500;
+    }
+    .popup-actions button:hover {
+        background: var(--primary-dark);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .field-group {
+        margin: 15px 0;
+        text-align: left;
+    }
+    .field-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--text-light);
+        font-size: 0.9em;
+    }
+    .field-group input,
+    .field-group textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 6px;
+        background: var(--background);
+        color: var(--text);
+        font-size: 0.95em;
+        transition: border-color 0.2s;
+    }
+    .field-group input:focus,
+    .field-group textarea:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(75,91,255,0.1);
+    }
+
+    /* Layout principal */
+    .content-layout {
+        display: grid;
+        grid-template-columns: 1fr 300px;
+        gap: 30px;
+        max-width: 1800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    /* Section des jeux */
+    .games-section {
+        min-width: 0;
+    }
+
+    .games-section h1 {
+        font-size: 2em;
+        margin: 0 0 30px;
+        background: linear-gradient(45deg, var(--primary), #6574ff);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    /* Sidebar droite */
+    .right-sidebar {
+        position: sticky;
+        top: 80px;
+        height: calc(100vh - 100px);
+        overflow-y: auto;
+        padding-right: 10px;
+        width: 300px;
+        min-width: 0;
+    }
+
+    /* Style des menus */
+    .sidebar-menu {
+        background: var(--card-bg);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        border: 1px solid rgba(255,255,255,0.05);
+        width: 100%;
+        box-sizing: border-box;
+        overflow: hidden;
+    }
+
+    .sidebar-menu h3 {
+        margin: 0 0 15px;
+        font-size: 1.2em;
+        color: var(--text);
+    }
+
+    .sidebar-menu p {
+        color: var(--text-light);
+        margin: 10px 0;
+        font-size: 0.95em;
+    }
+
+    /* Boutons des menus */
+    .menu-btn {
+        width: 100%;
+        background: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 10px;
+        font-size: 0.95em;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .menu-btn:hover {
+        background: var(--primary-dark);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(75,91,255,0.2);
+    }
+
+    /* Zone de résultat du tirage */
+    .menu-result {
+        margin-top: 15px;
+        padding: 10px;
+        border-radius: 6px;
+        background: var(--background);
+        color: var(--text);
+        text-align: center;
+        min-height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Stats */
+    .stats-content {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .stat-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .stat-item:last-child {
+        border-bottom: none;
+    }
+
+    .stat-label {
+        color: var(--text-light);
+    }
+
+    .stat-value {
+        font-weight: 500;
+        padding: 4px 8px;
+        border-radius: 4px;
+        min-width: 30px;
+        text-align: center;
+    }
+
+    /* Couleurs pour les différents états */
+    .stat-non-commence {
+        background-color: #6c757d;
+        color: white;
+    }
+
+    .stat-en-cours {
+        background-color: #007bff;
+        color: white;
+    }
+
+    .stat-termine {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .stat-abandonne {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .stat-genre {
+        background-color: var(--primary);
+        color: white;
+    }
+
+    /* Liste des jeux partagés */
+    .shared-games-list {
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    /* Ajustement responsive */
+    @media (max-width: 1024px) {
+        .content-layout {
+            grid-template-columns: 1fr;
+        }
+        
+        .right-sidebar {
+            width: 100%;
+            position: static;
+            height: auto;
+            padding-right: 0;
+        }
+    }
+
+    /* Styles pour le résultat du tirage */
+    .tirage-success {
+        background: var(--primary);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 6px;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .tirage-error {
+        background: var(--accent);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 6px;
+        animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .jeu-details {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+
+    .jeu-details h4 {
+        margin-bottom: 15px;
+        color: #fff;
+    }
+
+    .badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 15px 0;
+    }
+
+    .badge {
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-size: 0.9em;
+    }
+
+    #jeu-actions {
+        margin-top: 20px;
+    }
+
+    /* Couleurs pour les durées */
+    .duree-tres-courte { background-color: #4dc9b0; }
+    .duree-courte { background-color: #3eb489; }
+    .duree-moyenne-courte { background-color: #00bcd4; }
+    .duree-moyenne { background-color: #2196f3; }
+    .duree-moyenne-longue { background-color: #9c27b0; }
+    .duree-longue { background-color: #ce93d8; }
+    .duree-tres-longue { background-color: #673ab7; }
+
+    /* Animation pour l'apparition des détails */
+    .jeu-details {
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Ajout d'espacement pour la zone de tirage */
+    .sidebar-menu button.menu-btn {
+        margin-bottom: 20px;
+    }
+
+    .sidebar-menu #resultat-tirage {
+        margin-top: 30px;
+        border-top: 1px solid rgba(255,255,255,0.1);
+        padding-top: 20px;
+    }
+
+    /* Styles pour les jeux partagés */
+    .shared-game {
+        background: var(--background-light);
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 12px;
+    }
+
+    .shared-game-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 8px;
+    }
+
+    .shared-game-title {
+        font-weight: bold;
+        font-size: 1.1em;
+        margin: 0;
+    }
+
+    .shared-game-info {
+        font-size: 0.9em;
+        color: var(--text-light);
+    }
+
+    .shared-game-details {
+        margin: 8px 0;
+        font-size: 0.9em;
+    }
+
+    .shared-game-message {
+        background: var(--background);
+        padding: 8px;
+        border-radius: 4px;
+        margin: 8px 0;
+        font-style: italic;
+    }
+
+    .shared-game-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+    }
+
+    .shared-game-actions button {
+        padding: 4px 8px;
+        border-radius: 4px;
+        border: none;
+        cursor: pointer;
+        font-size: 0.9em;
+    }
+
+    .btn-accept {
+        background: var(--primary);
+        color: white;
+    }
+
+    .btn-delete {
+        background: var(--danger);
+        color: white;
+    }
+
+    .shared-date {
+        font-size: 0.8em;
+        color: var(--text-light);
+    }
+
+    .badge-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    /* Styles pour les graphiques */
+    .charts-container {
+        margin-top: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        width: 100%;
+        overflow: visible;
+    }
+
+    .chart-wrapper {
+        background: var(--background);
+        border-radius: 8px;
+        padding: 15px;
+        width: 100%;
+        box-sizing: border-box;
+        overflow: visible;
+    }
+
+    #etatChart {
+        width: 100%;
+        height: auto;
+        min-height: 300px;
+        max-height: 500px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 0;
+        padding: 0;
+    }
+
+    #etatChart img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* Responsive design pour les graphiques */
+    @media (max-width: 768px) {
+        .chart-wrapper {
+            padding: 10px;
+        }
+        
+        #etatChart {
+            min-height: 250px;
+        }
+    }
+
+    /* Styles pour le podium et les genres */
+    .podium-wrapper {
+        padding: 20px;
+        text-align: center;
+        max-width: 400px;
+        margin: 0 auto;
+    }
+
+    .podium-wrapper h3 {
+        margin-bottom: 20px;
+        color: var(--text);
+        font-size: 1.4em;
+    }
+
+    .other-genres {
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .other-genres h4 {
+        color: var(--text);
+        margin-bottom: 15px;
+        font-size: 1.2em;
+        text-align: left;
+        padding-left: 10px;
+    }
+
+    .other-genres-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 0 10px;
+    }
+
+    .other-genre-item {
+        background: rgba(255,255,255,0.05);
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 1.1em;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .genre-name {
+        color: var(--text);
+        font-weight: 500;
+    }
+
+    .genre-count {
+        color: var(--text-light);
+        font-weight: 500;
+        min-width: 30px;
+        text-align: right;
+    }
+
+    /* Podium styles */
+    .podium {
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        height: 200px;
+        margin-bottom: 30px;
+        gap: 10px;
+    }
+
+    .podium-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        opacity: 0.5;
+        transition: all 0.3s ease;
+        width: 80px;
+        position: relative;
+    }
+
+    .podium-block {
+        width: 60px;
+        background: linear-gradient(to bottom, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+        border-radius: 4px 4px 0 0;
+        transition: height 0.5s ease;
+        margin-top: 30px;  /* Ajout d'une marge en haut pour laisser de la place au nombre */
+    }
+
+    .gold .podium-block {
+        background: linear-gradient(45deg, #FFD700, #FFA500);
+        height: 150px;
+    }
+
+    .silver .podium-block {
+        background: linear-gradient(45deg, #C0C0C0, #A9A9A9);
+        height: 120px;
+    }
+
+    .bronze .podium-block {
+        background: linear-gradient(45deg, #CD7F32, #8B4513);
+        height: 90px;
+    }
+
+    .podium-item .genre-name {
+        margin-top: 10px;
+        font-size: 1.1em;
+        color: var(--text);
+        max-width: 70px;
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .podium-item .genre-count {
+        position: absolute;
+        top: 0;  /* Changé de -25px à 0 */
+        left: 50%;
+        transform: translateX(-50%);
+        font-weight: bold;
+        color: var(--text);
+        font-size: 1.2em;
+        background: var(--card-bg);
+        padding: 2px 8px;
+        border-radius: 4px;
+        z-index: 1;
+    }
+
+    /* Autres genres styles */
+    .other-genre-item {
+        background: rgba(255,255,255,0.05);
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 1.1em;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .other-genre-item .genre-count {
+        color: var(--text-light);
+        font-weight: 500;
+        min-width: 30px;
+        text-align: right;
+    }
+</style>
+</body>
+</html> 

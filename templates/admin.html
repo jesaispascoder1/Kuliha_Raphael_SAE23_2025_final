@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Administration - Le_Backlog</title>
+</head>
+<body>
+    <!-- Bandeau de navigation -->
+    <header>
+        <nav class="navbar">
+            <div class="nav-left">
+                <a href="/" class="app-title">Le_Backlog</a>
+                {{ma_liste_link}} {{admin_link}}
+            </div>
+            <div class="nav-right">
+                {{login_actions}}
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <div class="admin-container">
+            <h1>Administration</h1>
+
+            <!-- Section Gestion des Utilisateurs -->
+            <section class="admin-section">
+                <h2>Gestion des Utilisateurs</h2>
+                <div class="table-container">
+                    <table id="users-table">
+                        <thead>
+                            <tr>
+                                <th>Nom</th>
+                                <th>Rôle</th>
+                                <th>Dernier accès</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Rempli dynamiquement par JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Section Gestion des Jeux -->
+            <section class="admin-section">
+                <h2>Gestion des Jeux Publics</h2>
+                <div class="button-group">
+                    <button onclick="openAddGameModal()" class="btn-add">Ajouter un jeu</button>
+                    <button onclick="document.getElementById('csv-input').click()" class="btn-add">Importer CSV</button>
+                    <button onclick="exportGamesCSV()" class="btn-add">Exporter CSV</button>
+                    <input type="file" id="csv-input" accept=".csv" style="display: none" onchange="handleCSVUpload(event)">
+                </div>
+                <div class="table-container">
+                    <table id="games-table">
+                        <thead>
+                            <tr>
+                                <th>Titre</th>
+                                <th>Genre</th>
+                                <th>Éditeur</th>
+                                <th>Plateforme</th>
+                                <th>Temps moyen</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Rempli dynamiquement par JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Section Suggestions -->
+            <section class="admin-section">
+                <h2>Gestion des Suggestions</h2>
+                <div class="table-container">
+                    <table id="suggestions-table">
+                        <thead>
+                            <tr>
+                                <th>Titre</th>
+                                <th>Description</th>
+                                <th>Suggéré par</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Rempli dynamiquement par JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Modal pour ajouter un jeu -->
+    <div id="add-game-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Ajouter un nouveau jeu</h2>
+            <form id="add-game-form">
+                <div class="form-group">
+                    <label for="titre">Titre *</label>
+                    <input type="text" id="titre" name="titre" required>
+                </div>
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea id="description" name="description"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="genre">Genre</label>
+                        <input type="text" id="genre" name="genre">
+                    </div>
+                    <div class="form-group">
+                        <label for="temps">Temps moyen (heures)</label>
+                        <input type="number" id="temps" name="temps" min="0">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editeur">Éditeur</label>
+                        <input type="text" id="editeur" name="editeur">
+                    </div>
+                    <div class="form-group">
+                        <label for="plateforme">Plateforme</label>
+                        <input type="text" id="plateforme" name="plateforme">
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-submit">Ajouter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal pour voir les détails d'une suggestion -->
+    <div id="view-suggestion-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="document.getElementById('view-suggestion-modal').style.display='none'">&times;</span>
+            <h2>Détails de la suggestion</h2>
+            <div id="suggestion-details">
+                <div class="form-group">
+                    <label>Titre</label>
+                    <p id="suggestion-titre"></p>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <p id="suggestion-description"></p>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Genre</label>
+                        <p id="suggestion-genre"></p>
+                    </div>
+                    <div class="form-group">
+                        <label>Éditeur</label>
+                        <p id="suggestion-editeur"></p>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Plateforme</label>
+                        <p id="suggestion-plateforme"></p>
+                    </div>
+                    <div class="form-group">
+                        <label>Temps moyen</label>
+                        <p id="suggestion-temps"></p>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Suggéré par</label>
+                        <p id="suggestion-user"></p>
+                    </div>
+                    <div class="form-group">
+                        <label>Date de suggestion</label>
+                        <p id="suggestion-date"></p>
+                    </div>
+                </div>
+                <div class="suggestion-actions">
+                    <button onclick="acceptSuggestion(currentSuggestionId)" class="btn-submit">Accepter</button>
+                    <button onclick="deleteSuggestion(currentSuggestionId)" class="btn-delete">Rejeter</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* Variables de couleurs */
+        :root {
+            --primary: #4b5bff;
+            --primary-dark: #3644cc;
+            --secondary: #2a3142;
+            --accent: #ff6b6b;
+            --success: #4CAF50;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --background: #1a1d2a;
+            --card-bg: #242837;
+            --text: #e1e3e9;
+            --text-light: #9ba1b0;
+            --border: rgba(255,255,255,0.1);
+            --nav-bg: #12141c;
+            --auth-btn: #ff6b6b;
+            --auth-btn-hover: #ff5252;
+            --login-btn: #4b5bff;
+            --login-btn-hover: #3644cc;
+        }
+
+        /* Styles généraux */
+        body {
+            background: var(--background);
+            color: var(--text);
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .admin-container {
+            max-width: 1400px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        h1 {
+            color: var(--text);
+            font-size: 2em;
+            margin-bottom: 30px;
+        }
+
+        /* Sections */
+        .admin-section {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .admin-section h2 {
+            color: var(--text);
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            position: sticky;
+            top: 0;
+        }
+
+        /* Tables */
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+            position: relative;
+            max-height: 400px; /* Hauteur maximale avant défilement */
+            overflow-y: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: var(--card-bg);
+            margin: 0;
+        }
+
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            background: var(--card-bg);
+        }
+
+        th {
+            background: rgba(0,0,0,0.2);
+            font-weight: 600;
+            color: var(--text);
+            padding: 15px;
+            text-align: left;
+            border-bottom: 2px solid var(--border);
+        }
+
+        td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover {
+            background: rgba(255,255,255,0.02);
+        }
+
+        /* Style pour la barre de défilement */
+        .table-container::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .table-container::-webkit-scrollbar-track {
+            background: var(--card-bg);
+            border-radius: 4px;
+        }
+
+        .table-container::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        .table-container::-webkit-scrollbar-thumb:hover {
+            background: var(--text-light);
+        }
+
+        /* Badges de rôle */
+        .role-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+
+        .role-admin {
+            background: var(--primary);
+            color: white;
+        }
+
+        .role-user {
+            background: var(--secondary);
+            color: var(--text);
+        }
+
+        /* Boutons d'action */
+        .action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin: 0 4px;
+            color: white;
+        }
+
+        .btn-promote {
+            background: var(--primary);
+        }
+
+        .btn-promote:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-delete {
+            background: var(--danger);
+        }
+
+        .btn-delete:hover {
+            background: #c82333;
+        }
+
+        .btn-add {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.95em;
+            margin-bottom: 15px;
+        }
+
+        .btn-add:hover {
+            background: #3d8b40;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            margin: 10% auto;
+            padding: 20px;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 8px;
+            position: relative;
+        }
+
+        .close {
+            position: absolute;
+            right: 20px;
+            top: 15px;
+            font-size: 28px;
+            cursor: pointer;
+            color: var(--text-light);
+        }
+
+        .close:hover {
+            color: var(--text);
+        }
+
+        /* Formulaire */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--text);
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: var(--background);
+            color: var(--text);
+            box-sizing: border-box;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-actions {
+            text-align: right;
+            margin-top: 20px;
+        }
+
+        .btn-submit {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+
+        .btn-submit:hover {
+            background: var(--primary-dark);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .form-row .form-group {
+                margin-bottom: 0;
+            }
+
+            .modal-content {
+                width: 95%;
+                margin: 20px auto;
+            }
+        }
+
+        /* Styles de la navbar */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--nav-bg);
+            color: white;
+            padding: 0 30px;
+            height: 60px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 10;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+        }
+
+        .navbar .nav-left, .navbar .nav-right {
+            display: flex;
+            align-items: center;
+            height: 100%;
+            gap: 15px;
+        }
+
+        .navbar a {
+            color: #fff;
+            text-decoration: none;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+        }
+
+        .navbar a.app-title {
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            height: 60px;
+            margin: -2px 0 0 -8px;
+            background: linear-gradient(45deg, #fff, #e0e3ff);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 2px 10px rgba(255,255,255,0.1);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            height: 36px;
+            background: rgba(255,255,255,0.1);
+            padding: 0 15px;
+            border-radius: 6px;
+        }
+
+        .navbar .nav-right .btn {
+            height: 36px;
+            padding: 0 18px;
+            display: flex;
+            align-items: center;
+            background: var(--auth-btn);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.2s;
+            margin: 0;
+        }
+
+        .navbar .nav-right .btn:hover {
+            background: var(--auth-btn-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255,107,107,0.2);
+        }
+
+        .navbar .nav-right .btn-login {
+            height: 36px;
+            padding: 0 18px;
+            display: flex;
+            align-items: center;
+            background: var(--login-btn);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.2s;
+            margin: 0;
+            text-decoration: none;
+        }
+
+        .navbar .nav-right .btn-login:hover {
+            background: var(--login-btn-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(75,91,255,0.2);
+        }
+
+        .navbar .nav-right .btn-register {
+            height: 36px;
+            padding: 0 18px;
+            display: flex;
+            align-items: center;
+            background: var(--login-btn);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.2s;
+            margin: 0;
+            text-decoration: none;
+        }
+
+        .navbar .nav-right .btn-register:hover {
+            background: var(--login-btn-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(75,91,255,0.2);
+        }
+
+        /* Ajustement du contenu principal pour la navbar fixe */
+        main {
+            margin-top: 80px;
+            padding: 20px;
+        }
+
+        /* Ajout du style pour le groupe de boutons */
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        /* Styles pour les détails de suggestion */
+        #suggestion-details {
+            padding: 20px 0;
+        }
+
+        #suggestion-details p {
+            margin: 5px 0;
+            padding: 8px;
+            background: var(--background);
+            border-radius: 4px;
+            color: var(--text);
+        }
+
+        .suggestion-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: flex-end;
+        }
+
+        .suggestion-actions button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .suggestion-description {
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .btn-view {
+            background: #4CAF50;  /* Vert */
+            color: white;
+        }
+
+        .btn-view:hover {
+            background: #45a049;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(76, 175, 80, 0.3);
+        }
+    </style>
+
+    <script>
+        // Variables globales pour la gestion des suggestions
+        let currentSuggestionId = null;
+
+        // Fonction pour charger les utilisateurs avec debug amélioré
+        async function loadUsers() {
+            const tbody = document.querySelector('#users-table tbody');
+            if (!tbody) {
+                console.error('tbody non trouvé dans #users-table');
+                return;
+            }
+
+            try {
+                console.log('Début du chargement des utilisateurs...');
+                const response = await fetch('/get_users_ajax');
+                console.log('Réponse reçue:', response);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Données reçues:', data);
+                
+                if (!data.success) {
+                    throw new Error(data.error || 'Erreur inconnue');
+                }
+
+                tbody.innerHTML = '';
+                
+                if (!data.users || data.users.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px;">Aucun utilisateur trouvé</td></tr>';
+                    return;
+                }
+                
+                data.users.forEach((user, index) => {
+                    console.log(`Traitement utilisateur ${index}:`, user);
+                    const tr = document.createElement('tr');
+                    const roleClass = user.Role === 'Admin' ? 'role-admin' : 'role-user';
+                    const lastAccess = user.Dernier_acces ? new Date(user.Dernier_acces).toLocaleString() : 'Jamais';
+                    
+                    tr.innerHTML = `
+                        <td>${user.Nom || ''}</td>
+                        <td><span class="role-badge ${roleClass}">${user.Role || 'Utilisateur'}</span></td>
+                        <td>${lastAccess}</td>
+                        <td>
+                            ${user.Role !== 'Admin' ? 
+                                `<button onclick="promoteUser('${user.ID}')" class="action-btn btn-promote">Promouvoir Admin</button>` : 
+                                ''}
+                            <button onclick="deleteUser('${user.ID}')" class="action-btn btn-delete">Supprimer</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (error) {
+                console.error('Erreur lors du chargement des utilisateurs:', error);
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: 20px; color: var(--danger);">
+                            Erreur lors du chargement des utilisateurs: ${error.message}
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        // Fonction pour supprimer un utilisateur avec debug
+        async function deleteUser(userId) {
+            if (!confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) return;
+            
+            try {
+                console.log('Tentative de suppression de l\'utilisateur:', userId);
+                const response = await fetch('/delete_user_ajax', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({user_id: userId})
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Réponse de suppression:', data);
+
+                if (data.success) {
+                    console.log('Suppression réussie, rechargement de la liste...');
+                    await loadUsers();
+                } else {
+                    throw new Error(data.error || 'Erreur lors de la suppression');
+                }
+            } catch (error) {
+                console.error('Erreur lors de la suppression:', error);
+                alert('Erreur lors de la suppression: ' + error.message);
+            }
+        }
+
+        // Fonction pour promouvoir un utilisateur avec debug
+        async function promoteUser(userId) {
+            if (!confirm('Êtes-vous sûr de vouloir promouvoir cet utilisateur en administrateur ?')) return;
+            
+            try {
+                console.log('Tentative de promotion de l\'utilisateur:', userId);
+                const response = await fetch('/promote_user_ajax', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({user_id: userId})
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Réponse de promotion:', data);
+
+                if (data.success) {
+                    console.log('Promotion réussie, rechargement de la liste...');
+                    await loadUsers();
+                } else {
+                    throw new Error(data.error || 'Erreur lors de la promotion');
+                }
+            } catch (error) {
+                console.error('Erreur lors de la promotion:', error);
+                alert('Erreur lors de la promotion: ' + error.message);
+            }
+        }
+
+        // Chargement initial avec debug
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Page chargée, chargement des données...');
+            loadUsers();
+            loadGames();
+            loadSuggestions();
+        });
+
+        // Fonctions pour la gestion des jeux
+        async function loadGames() {
+            try {
+                const response = await fetch('/get_games_ajax');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const tbody = document.querySelector('#games-table tbody');
+                    tbody.innerHTML = '';
+                    
+                    data.games.forEach(game => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${game.Titre}</td>
+                            <td>${game.Genre || '–'}</td>
+                            <td>${game.Editeur || '–'}</td>
+                            <td>${game.Plateforme || '–'}</td>
+                            <td>${game.Temps_moyen_termine ? game.Temps_moyen_termine + 'h' : '–'}</td>
+                            <td>
+                                <button onclick="deleteGame('${game.ID}')" class="action-btn btn-delete">Supprimer</button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+            }
+        }
+
+        async function deleteGame(gameId) {
+            if (!confirm('Êtes-vous sûr de vouloir supprimer ce jeu ?')) return;
+            
+            try {
+                const response = await fetch('/delete_game_ajax', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({game_id: gameId})
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    loadGames();
+                } else {
+                    alert(data.error || 'Erreur lors de la suppression');
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Erreur lors de la suppression');
+            }
+        }
+
+        // Modal pour ajouter un jeu
+        function openAddGameModal() {
+            document.getElementById('add-game-modal').style.display = 'block';
+        }
+
+        // Fermer le modal
+        document.querySelector('.close').onclick = function() {
+            document.getElementById('add-game-modal').style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('add-game-modal')) {
+                document.getElementById('add-game-modal').style.display = 'none';
+            }
+        }
+
+        // Soumission du formulaire d'ajout de jeu
+        document.getElementById('add-game-form').onsubmit = async function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                titre: document.getElementById('titre').value,
+                description: document.getElementById('description').value,
+                genre: document.getElementById('genre').value,
+                temps: document.getElementById('temps').value,
+                editeur: document.getElementById('editeur').value,
+                plateforme: document.getElementById('plateforme').value
+            };
+            
+            try {
+                const response = await fetch('/add_game_ajax', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(formData)
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('add-game-modal').style.display = 'none';
+                    document.getElementById('add-game-form').reset();
+                    loadGames();
+                } else {
+                    alert(data.error || 'Erreur lors de l\'ajout du jeu');
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Erreur lors de l\'ajout du jeu');
+            }
+        };
+
+        // Fonctions pour la gestion des suggestions
+        async function loadSuggestions() {
+            try {
+                console.log('Début du chargement des suggestions...');
+                const response = await fetch('/get_suggestions_ajax');
+                console.log('Réponse reçue:', response);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Données reçues:', data);
+                
+                const tbody = document.querySelector('#suggestions-table tbody');
+                if (!tbody) {
+                    console.error('tbody non trouvé dans #suggestions-table');
+                    return;
+                }
+                
+                tbody.innerHTML = '';
+                
+                if (!data.success) {
+                    console.error('Erreur côté serveur:', data.error);
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 20px; color: red;">Erreur: ${data.error}</td></tr>`;
+                    return;
+                }
+                
+                if (!data.suggestions || data.suggestions.length === 0) {
+                    console.log('Aucune suggestion trouvée');
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">Aucune suggestion en attente</td></tr>';
+                    return;
+                }
+                
+                console.log('Ajout des suggestions au tableau...');
+                data.suggestions.forEach(suggestion => {
+                    const tr = document.createElement('tr');
+                    const date = new Date(suggestion.Date_suggestion).toLocaleString();
+                    
+                    tr.innerHTML = `
+                        <td>${suggestion.Titre || '–'}</td>
+                        <td class="suggestion-description">${suggestion.Description || '–'}</td>
+                        <td>${suggestion.User || 'Anonyme'}</td>
+                        <td>${date}</td>
+                        <td>
+                            <button onclick="viewSuggestion('${suggestion.ID}')" class="action-btn btn-view">Voir détails</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                console.log('Chargement des suggestions terminé');
+            } catch (error) {
+                console.error('Erreur lors du chargement des suggestions:', error);
+                const tbody = document.querySelector('#suggestions-table tbody');
+                if (tbody) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 20px; color: red;">
+                        Erreur lors du chargement des suggestions: ${error.message}
+                    </td></tr>`;
+                }
+            }
+        }
+
+        // Fonction pour afficher les détails d'une suggestion
+        async function viewSuggestion(suggestionId) {
+            try {
+                console.log('Ouverture des détails pour la suggestion:', suggestionId);
+                currentSuggestionId = suggestionId;
+                
+                const response = await fetch('/get_suggestions_ajax');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                if (!data.success) {
+                    throw new Error(data.error || 'Erreur lors de la récupération des suggestions');
+                }
+                
+                console.log('Recherche de la suggestion avec ID:', suggestionId);
+                const suggestion = data.suggestions.find(s => String(s.ID) === String(suggestionId));
+                
+                if (suggestion) {
+                    console.log('Suggestion trouvée:', suggestion);
+                    document.getElementById('suggestion-titre').textContent = suggestion.Titre || '–';
+                    document.getElementById('suggestion-description').textContent = suggestion.Description || '–';
+                    document.getElementById('suggestion-genre').textContent = suggestion.Genre || '–';
+                    document.getElementById('suggestion-editeur').textContent = suggestion.Editeur || '–';
+                    document.getElementById('suggestion-plateforme').textContent = suggestion.Plateforme || '–';
+                    document.getElementById('suggestion-temps').textContent = suggestion.Temps_moyen_termine ? `${suggestion.Temps_moyen_termine}h` : '–';
+                    document.getElementById('suggestion-user').textContent = suggestion.User || 'Anonyme';
+                    document.getElementById('suggestion-date').textContent = new Date(suggestion.Date_suggestion).toLocaleString();
+                    
+                    // Afficher le modal
+                    document.getElementById('view-suggestion-modal').style.display = 'block';
+                } else {
+                    console.error('Suggestion non trouvée avec ID:', suggestionId);
+                    alert('Erreur : Suggestion non trouvée');
+                }
+            } catch (error) {
+                console.error('Erreur lors de l\'affichage des détails:', error);
+                alert('Erreur lors de l\'affichage des détails: ' + error.message);
+            }
+        }
+
+        // Mise à jour des fonctions de gestion des suggestions
+        async function acceptSuggestion(suggestionId) {
+            if (!confirm('Voulez-vous accepter cette suggestion ?')) return;
+            
+            try {
+                console.log('Tentative d\'acceptation de la suggestion:', suggestionId);
+                const response = await fetch('/accept_suggestion_ajax', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({suggestion_id: suggestionId})
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('view-suggestion-modal').style.display = 'none';
+                    await loadSuggestions();
+                    await loadGames();
+                } else {
+                    throw new Error(data.error || 'Erreur lors de l\'acceptation');
+                }
+            } catch (error) {
+                console.error('Erreur lors de l\'acceptation:', error);
+                alert('Erreur lors de l\'acceptation: ' + error.message);
+            }
+        }
+
+        async function deleteSuggestion(suggestionId) {
+            if (!confirm('Voulez-vous rejeter cette suggestion ?')) return;
+            
+            try {
+                console.log('Tentative de suppression de la suggestion:', suggestionId);
+                const response = await fetch('/delete_suggestion_ajax', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({suggestion_id: suggestionId})
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('view-suggestion-modal').style.display = 'none';
+                    await loadSuggestions();
+                } else {
+                    throw new Error(data.error || 'Erreur lors du rejet');
+                }
+            } catch (error) {
+                console.error('Erreur lors de la suppression:', error);
+                alert('Erreur lors du rejet: ' + error.message);
+            }
+        }
+
+        // Ajout de la fonction handleCSVUpload dans la partie script
+        async function handleCSVUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Vérifier le type de fichier
+            if (!file.name.endsWith('.csv')) {
+                alert('Veuillez sélectionner un fichier CSV');
+                event.target.value = '';
+                return;
+            }
+
+            try {
+                // Lire le fichier
+                const content = await file.text();
+                
+                // Envoyer le contenu
+                const response = await fetch('/import_games_csv', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ content: content })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                if (data.success) {
+                    alert('Import réussi ! ' + data.message);
+                    loadGames();  // Recharger la liste des jeux
+                } else {
+                    alert('Erreur lors de l\'import : ' + data.error);
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Erreur lors de l\'import du fichier : ' + error.message);
+            }
+
+            // Réinitialiser l'input file pour permettre de sélectionner le même fichier à nouveau
+            event.target.value = '';
+        }
+
+        // Ajout de la fonction d'exportation CSV
+        function exportGamesCSV() {
+            // Récupérer les jeux depuis le tableau
+            const table = document.getElementById('games-table');
+            const rows = Array.from(table.querySelectorAll('tbody tr'));
+            
+            // Créer l'en-tête du CSV avec les mêmes colonnes que l'import
+            let csvContent = 'Titre,Description,Temps,Genre,Editeur,Plateforme\n';
+            
+            // Ajouter chaque ligne
+            rows.forEach(row => {
+                const cells = Array.from(row.querySelectorAll('td'));
+                const rowData = [
+                    cells[0].textContent, // Titre
+                    "", // Description (vide car non affiché dans le tableau)
+                    cells[4].textContent.replace('h', '').replace('–', '0').trim(), // Temps (enlever le 'h' et remplacer '–' par '0')
+                    cells[1].textContent.replace('–', ''), // Genre
+                    cells[2].textContent.replace('–', ''), // Editeur
+                    cells[3].textContent.replace('–', '') // Plateforme
+                ].map(cell => {
+                    // Échapper les guillemets doubles et entourer de guillemets
+                    return `"${cell.trim().replace(/"/g, '""')}"`;
+                }).join(',');
+                csvContent += rowData + '\n';
+            });
+            
+            // Créer un blob et un lien de téléchargement
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'jeux_export.csv');
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html> 

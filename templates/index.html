@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }}</title>
+</head>
+<body>
+    <!-- Bandeau de navigation -->
+    <header>
+        <nav class="navbar">
+            <div class="nav-left">
+                <a href="/" class="app-title">Le_Backlog</a>
+                {{ ma_liste_link|safe }} {{ admin_link|safe }}
+            </div>
+            <div class="nav-right">
+                {{ login_actions|safe }}
+            </div>
+        </nav>
+    </header>
+    {% if not user %}
+    <script>window.onload = function(){openPopup(false);};</script>
+    {% endif %}
+
+    <main>
+        <section class="welcome">
+            <h1>Bienvenue sur Le_Backlog !</h1>
+            <p>Gère facilement ta collection de jeux vidéo.<br>
+            Suggère, partage ou retrouve le jeu idéal !</p>
+        </section>
+
+        <section class="public-games">
+            <h2>Jeux populaires (liste publique)</h2>
+            <div class="games-list">
+                {% for jeu in jeux %}
+                <div class="game-card">
+                    <h3>{{ jeu.Titre }}</h3>
+                    <p><strong>Description :</strong> {{ jeu.Description or '–' }}</p>
+                    <p><strong>Genre : </strong><span {% if jeu.Genre %}style="{{ get_style_genre(jeu.Genre)|e }}"{% endif %}>{{ jeu.Genre or '–' }}</span></p>
+                    <p><strong>Éditeur :</strong> {{ jeu.Editeur or '–' }}</p>
+                    <p><strong>Plateforme :</strong> {{ jeu.Plateforme or '–' }}</p>
+                    <p><strong>Durée : </strong><span {% if jeu.Temps_moyen_termine %}style="{{ get_style_temps(jeu.Temps_moyen_termine)|e }}"{% endif %}>{{ jeu.Temps_moyen_termine }}h ({{ get_categorie_temps(jeu.Temps_moyen_termine) }})</span></p>
+                    <p><strong>Ajouté par :</strong> {{ jeu.Ajoute_Par or 'Admin' }}</p>
+                    {% if user %}
+                    <button class='add-to-list-btn' onclick="ajouterJeuPerso('{{ jeu.ID }}')">Ajouter à ma liste</button>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        <section class="suggestion-zone" style="text-align:center; margin:24px 0;">
+            <button class="btn" onclick="openSuggestionPopup()">Suggérer un jeu</button>
+            <div class="tirage-zone" style="margin-top: 20px;">
+                <h3>Tirage au sort</h3>
+                <p>Laisse le hasard choisir un jeu de la liste publique !</p>
+                <button onclick="tirerAuSortPublic()" class="btn">Tirer au sort</button>
+                <div id="resultat-tirage" class="hidden" style="margin-top: 30px;">
+                    <h3>Résultat du tirage :</h3>
+                    <div class="jeu-details">
+                        <h4 id="jeu-titre"></h4>
+                        <div id="jeu-info">
+                            <p id="jeu-description"></p>
+                            <div class="badges">
+                                <span id="jeu-genre" class="badge"></span>
+                                <span id="jeu-temps" class="badge"></span>
+                                <span id="jeu-plateforme" class="badge"></span>
+                                <span id="jeu-editeur" class="badge"></span>
+                            </div>
+                        </div>
+                        <div id="jeu-actions">
+                            <button id="btn-ajouter-jeu" class="btn btn-primary">Ajouter à ma liste</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Pop-up Connexion/Inscription (sera mis en display:block si affiché) -->
+    <div id="popup-bg" class="popup-bg" style="display:none;">
+        <div class="popup">
+            <span class="close-btn" onclick="closePopup()">&times;</span>
+            <h2 id="popup-title">Connexion</h2>
+            <form id="popup-form">
+                <div id="popup-error" style="color:red"></div>
+                <input id="popup-nom" name="nom" type="text" placeholder="Nom d'utilisateur" required>
+                <input id="popup-mdp" name="mdp" type="password" placeholder="Mot de passe" required>
+                <button type="submit" id="popup-action">Se connecter</button>
+            </form>
+            <div id="popup-toggle">
+                <span id="toggle-msg">Pas encore de compte ?</span>
+                <button type="button" onclick="toggleMode()">Créer un compte</button>
+            </div>
+        </div>
+    </div>
+        <div id="popup-bg-sugg" class="popup-bg" style="display:none;">
+        <div class="popup">
+            <span class="close-btn" onclick="closePopupSugg()">&times;</span>
+            <h2>Suggestion d'un nouveau jeu</h2>
+            <form id="popup-sugg-form" autocomplete="off">
+                <div id="popup-sugg-error" style="color:red"></div>
+                
+                <div class="field-group">
+                    <label for="titre">Titre du jeu *</label>
+                    <input id="titre" name="titre" type="text" placeholder="Ex: The Legend of Zelda" required maxlength="100">
+                </div>
+                
+                <div class="field-group">
+                    <label for="description">Description</label>
+                    <textarea id="description" name="description" placeholder="Une courte description du jeu..." rows="3" maxlength="400"></textarea>
+                </div>
+                
+                <div class="field-row">
+                    <div class="field-group">
+                        <label for="temps">Temps de jeu (heures)</label>
+                        <input id="temps" name="temps" type="number" min="0" placeholder="Ex: 20">
+                    </div>
+                    <div class="field-group">
+                        <label for="genre">Genre</label>
+                        <input id="genre" name="genre" type="text" placeholder="Ex: RPG, Action...">
+                    </div>
+                </div>
+                
+                <div class="field-row">
+                    <div class="field-group">
+                        <label for="editeur">Éditeur</label>
+                        <input id="editeur" name="editeur" type="text" placeholder="Ex: Nintendo">
+                    </div>
+                    <div class="field-group">
+                        <label for="plateforme">Plateforme</label>
+                        <input id="plateforme" name="plateforme" type="text" placeholder="Ex: Switch, PS5...">
+                    </div>
+                </div>
+                
+                <div class="popup-actions">
+                    <button type="submit">Envoyer la suggestion</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+    let isLogin = true; // connexion=true, inscription=false
+
+    function openPopup(reg = false) {
+        document.getElementById('popup-bg').style.display = 'flex';
+        isLogin = !reg;
+        setPopupMode(!reg);
+    }
+    function closePopup() {
+        document.getElementById('popup-bg').style.display = 'none';
+        document.getElementById('popup-error').textContent = '';
+        document.getElementById("popup-form").reset();
+    }
+    function setPopupMode(login) {
+        if (login) {
+            document.getElementById('popup-title').textContent = "Connexion";
+            document.getElementById('popup-action').textContent = "Se connecter";
+            document.getElementById('toggle-msg').textContent = "Pas encore de compte ?";
+            document.getElementById('popup-toggle').children[1].textContent = "Créer un compte";
+        } else {
+            document.getElementById('popup-title').textContent = "Créer un compte";
+            document.getElementById('popup-action').textContent = "Inscription";
+            document.getElementById('toggle-msg').textContent = "Déjà inscrit ?";
+            document.getElementById('popup-toggle').children[1].textContent = "Connexion";
+        }
+    }
+    function toggleMode() {
+        isLogin = !isLogin;
+        setPopupMode(isLogin);
+        document.getElementById('popup-error').textContent = '';
+        document.getElementById("popup-form").reset();
+    }
+    // AJAX login/register
+    document.getElementById('popup-form').onsubmit = async function(e){
+        e.preventDefault();
+        let data = {
+            nom: document.getElementById('popup-nom').value,
+            mdp: document.getElementById('popup-mdp').value,
+        };
+        let endpoint = isLogin ? "/login_ajax" : "/register_ajax";
+        let r = await fetch(endpoint, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(data)
+        });
+        let resp = await r.json();
+        if(resp.success){
+            window.location.reload();
+        } else {
+            document.getElementById('popup-error').textContent = resp.error;
+        }
+    };
+    </script>
+    <script>
+    async function ajouterJeuPerso(jeu_id) {
+        let reponse = await fetch('/ajouter_jeu_depuis_publique', {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ jeu_id })
+        });
+        let res = await reponse.json();
+        if(res.success){
+            alert("Jeu ajouté à votre liste perso !");
+        } else {
+            alert("Erreur : " + res.error);
+        }
+    }
+    </script>
+
+    <script>
+        // Variable générée par Python, vaut true si connecté, false sinon
+        var userConnecte = "{{user_connecte}}" === "true";  // ⚠️ injectée dynamiquement depuis Python
+
+        function openSuggestionPopup() {
+            if (!userConnecte) {
+                alert("Connecte-toi pour suggérer un jeu !");
+                return;
+            }
+            document.getElementById('popup-bg-sugg').style.display = 'flex';
+            document.getElementById('popup-sugg-error').textContent = '';
+            document.getElementById('popup-sugg-form').reset();
+        }
+        function closePopupSugg() {
+            document.getElementById('popup-bg-sugg').style.display = 'none';
+        }
+
+        // Envoi AJAX
+        document.getElementById('popup-sugg-form').onsubmit = async function(e){
+            e.preventDefault();
+            let f = e.target;
+            let donnees = {
+                titre: f.titre.value.trim(),
+                description: f.description.value.trim(),
+                temps: f.temps.value,
+                genre: f.genre.value.trim(),
+                editeur: f.editeur.value.trim(),
+                plateforme: f.plateforme.value.trim()
+            };
+            let r = await fetch("/sugg_jeu_ajax", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(donnees)
+            });
+            let res = await r.json();
+            if(res.success){
+                closePopupSugg();
+                alert("Merci ! Ta suggestion a bien été envoyée à l'équipe.");
+            } else {
+                document.getElementById('popup-sugg-error').textContent = res.error;
+            }
+        }
+    </script>
+
+    <script>
+    async function tirerAuSortPublic() {
+        try {
+            // Réinitialiser l'interface avant un nouveau tirage
+            const btnAjouter = document.getElementById('btn-ajouter-jeu');
+            btnAjouter.disabled = false;
+            btnAjouter.textContent = 'Ajouter à ma liste';
+            
+            let r = await fetch('/tirer_au_sort_public_ajax');
+            let res = await r.json();
+            const resultat = document.getElementById('resultat-tirage');
+            if(res.success) {
+                afficherJeuTire(res.jeu);
+            } else {
+                resultat.innerHTML = `<div class="tirage-error">${res.error}</div>`;
+            }
+        } catch(e) {
+            document.getElementById('resultat-tirage').innerHTML = 
+                '<div class="tirage-error">Erreur lors du tirage</div>';
+        }
+    }
+    </script>
+
+    <script>
+    function afficherJeuTire(jeu) {
+        const resultat = document.getElementById('resultat-tirage');
+        const titre = document.getElementById('jeu-titre');
+        const description = document.getElementById('jeu-description');
+        const genre = document.getElementById('jeu-genre');
+        const temps = document.getElementById('jeu-temps');
+        const plateforme = document.getElementById('jeu-plateforme');
+        const editeur = document.getElementById('jeu-editeur');
+        const btnAjouter = document.getElementById('btn-ajouter-jeu');
+
+        // Réinitialiser les éléments
+        titre.textContent = jeu.titre;
+        description.textContent = jeu.description || 'Aucune description disponible';
+        genre.textContent = jeu.genre || 'Genre inconnu';
+        temps.textContent = jeu.temps ? `${jeu.temps}h` : 'Durée inconnue';
+        plateforme.textContent = jeu.plateforme || 'Plateforme inconnue';
+        editeur.textContent = jeu.editeur || 'Éditeur inconnu';
+
+        // Réinitialiser le bouton
+        btnAjouter.disabled = false;
+        btnAjouter.textContent = 'Ajouter à ma liste';
+        btnAjouter.onclick = () => ajouterJeuPublique(jeu.id);
+
+        // Appliquer les couleurs appropriées aux badges
+        appliquerCouleursGenre(genre, jeu.genre);
+        appliquerCouleursDuree(temps, jeu.temps);
+
+        resultat.classList.remove('hidden');
+        resultat.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function ajouterJeuPublique(jeuId) {
+        if (!userConnecte) {
+            alert("Connectez-vous pour ajouter des jeux à votre liste !");
+            return;
+        }
+        
+        const btnAjouter = document.getElementById('btn-ajouter-jeu');
+        btnAjouter.disabled = true; // Désactiver le bouton pendant la requête
+        
+        fetch(`/ajouter_jeu_publique/${jeuId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) {
+                alert(data.error || "Une erreur est survenue");
+                btnAjouter.disabled = false; // Réactiver le bouton en cas d'erreur
+            } else {
+                alert(data.message);
+                btnAjouter.textContent = 'Ajouté à votre liste';
+                // Le bouton reste désactivé en cas de succès
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            alert('Une erreur est survenue lors de la communication avec le serveur');
+            btnAjouter.disabled = false; // Réactiver le bouton en cas d'erreur
+        });
+    }
+
+    function appliquerCouleursGenre(element, genre) {
+        element.className = 'badge';
+        if (genre) {
+            element.classList.add(`genre-${genre.toLowerCase().replace(' ', '-')}`);
+        }
+    }
+
+    function appliquerCouleursDuree(element, temps) {
+        element.className = 'badge';
+        if (!temps) return;
+        
+        if (temps <= 5) element.classList.add('duree-tres-courte');
+        else if (temps <= 10) element.classList.add('duree-courte');
+        else if (temps <= 20) element.classList.add('duree-moyenne-courte');
+        else if (temps <= 40) element.classList.add('duree-moyenne');
+        else if (temps <= 60) element.classList.add('duree-moyenne-longue');
+        else if (temps <= 100) element.classList.add('duree-longue');
+        else element.classList.add('duree-tres-longue');
+    }
+    </script>
+
+</body>
+
+<style>
+    /* Variables de couleurs */
+    :root {
+        --primary: #4b5bff;
+        --primary-dark: #3644cc;
+        --secondary: #2a3142;
+        --accent: #ff6b6b;
+        --success: #4CAF50;
+        --danger: #dc3545;
+        --warning: #ffc107;
+        --background: #1a1d2a;
+        --card-bg: #242837;
+        --text: #e1e3e9;
+        --text-light: #9ba1b0;
+        --border: rgba(255,255,255,0.1);
+        --nav-bg: #12141c;
+        --auth-btn: #ff6b6b;
+        --auth-btn-hover: #ff5252;
+        --login-btn: #4b5bff;
+        --login-btn-hover: #3644cc;
+    }
+
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0; 
+        padding: 0;
+        background: var(--background);
+        color: var(--text);
+    }
+    /* Bandeau */
+    .navbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--nav-bg);
+        color: white;
+        padding: 0 30px;
+        height: 60px;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 10;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+    }
+    .navbar .nav-left, .navbar .nav-right {
+        display: flex;
+        align-items: center;
+        height: 100%;
+        gap: 24px;
+    }
+    .navbar a {
+        color: #fff;
+        text-decoration: none;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+    }
+    .navbar a.app-title {
+        font-size: 1.5em;
+        font-weight: bold;
+        color: #fff;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        height: 60px;
+        margin: -2px 0 0 -8px;
+        background: linear-gradient(45deg, #fff, #e0e3ff);
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: 0 2px 10px rgba(255,255,255,0.1);
+        padding: 0;
+    }
+    .navbar .nav-right {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        height: 100%;
+    }
+    .navbar .nav-right .btn {
+        height: 36px;
+        padding: 0 18px;
+        display: flex;
+        align-items: center;
+        background: var(--auth-btn);
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        font-weight: 500;
+        transition: all 0.2s;
+        margin: 0;
+    }
+    .navbar .nav-right .btn:hover {
+        background: var(--auth-btn-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(255,107,107,0.2);
+    }
+    .navbar .nav-right .btn-login,
+    .navbar .nav-right .btn-register {
+        height: 36px;
+        padding: 0 18px;
+        display: flex;
+        align-items: center;
+        background: var(--primary);
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        font-weight: 500;
+        transition: all 0.2s;
+        margin: 0;
+        cursor: pointer;
+    }
+    .navbar .nav-right .btn-login:hover,
+    .navbar .nav-right .btn-register:hover {
+        background: var(--primary-dark);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(75,91,255,0.2);
+    }
+    .navbar .nav-right a[onclick*="openPopup"] {
+        height: 36px;
+        padding: 0 18px;
+        display: flex;
+        align-items: center;
+        background: var(--primary);
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        font-weight: 500;
+        transition: all 0.2s;
+        margin: 0;
+        cursor: pointer;
+        text-decoration: none;
+    }
+    .navbar .nav-right a[onclick*="openPopup"]:hover {
+        background: var(--primary-dark);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(75,91,255,0.2);
+    }
+    .navbar .nav-right a[onclick*="openPopup(true)"] {
+        background: var(--primary);
+    }
+    .navbar .nav-right a[onclick*="openPopup(true)"]:hover {
+        background: var(--primary-dark);
+    }
+    .user-info {
+        display: flex;
+        align-items: center;
+        height: 36px;
+        background: rgba(255,255,255,0.1);
+        padding: 0 15px;
+        border-radius: 6px;
+    }
+    .user-info i {
+        margin-right: 8px;
+    }
+    /* Pop-up stylé */
+    .popup-bg {
+        position: fixed; top:0; left:0; width:100vw; height:100vh;
+        background: rgba(0,0,0,0.7);
+        z-index: 20; 
+        display: flex; 
+        justify-content: center; 
+        align-items: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    .popup-bg[style*="flex"] {
+        opacity: 1;
+    }
+    .popup {
+        background: var(--card-bg);
+        color: var(--text);
+        border-radius: 12px; 
+        padding: 35px 30px 25px;
+        min-width: 340px;
+        max-width: 90%;
+        box-shadow: 0 4px 25px rgba(0,0,0,0.15);
+        text-align: center;
+        position: relative;
+        transform: translateY(20px);
+        transition: transform 0.3s ease;
+        margin: 0 auto;  /* Centre horizontalement */
+    }
+    .popup-bg[style*="flex"] .popup {
+        transform: translateY(0);
+    }
+    .popup h2 {
+        margin: 0 0 25px;
+        background: linear-gradient(45deg, var(--primary), #6574ff);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-size: 1.5em;
+        font-weight: bold;
+    }
+    .close-btn {
+        position: absolute;
+        top: 15px; right: 20px; 
+        font-size: 24px;
+        cursor: pointer;
+        color: #666;
+        transition: color 0.2s;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+    }
+    .close-btn:hover {
+        color: #333;
+        background: #f0f0f0;
+    }
+    .popup input, .popup textarea {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 10px 12px;
+        margin: 8px 0;
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 6px;
+        font-size: 0.95em;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        background: var(--background);
+        color: var(--text);
+    }
+    .popup textarea {
+        min-height: 80px;
+        margin: 8px 0 12px;
+    }
+    .popup input:focus, .popup textarea:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(75,91,255,0.1);
+    }
+    .popup-actions { 
+        margin-top: 25px;
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+    }
+    .popup-actions button {
+        width: 100%;
+        padding: 12px;
+        background: var(--primary);
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        font-size: 1em;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-top: 15px;
+    }
+    .popup-actions button:hover {
+        background: var(--primary-dark);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(75,91,255,0.2);
+    }
+    .popup-actions button:active {
+        transform: translateY(0);
+    }
+    #popup-toggle {
+        margin-top: 20px;
+        color: #666;
+    }
+    #popup-toggle button {
+        background: none;
+        border: none;
+        color: var(--primary);
+        cursor: pointer;
+        padding: 8px 12px;
+        font-size: 0.95em;
+        transition: all 0.2s;
+        font-weight: 500;
+        border-radius: 4px;
+    }
+    #popup-toggle button:hover {
+        background: rgba(75,91,255,0.1);
+        color: var(--primary-dark);
+        transform: translateY(-1px);
+    }
+    #popup-error, #popup-sugg-error {
+        color: var(--accent);
+        margin: 10px 0;
+        font-size: 0.9em;
+    }
+    /* Groupes de champs pour la suggestion */
+    .field-group {
+        margin: 15px 0;
+        text-align: left;
+    }
+    .field-group label {
+        display: block;
+        margin-bottom: 5px;
+        color: var(--text-light);
+        font-size: 0.9em;
+    }
+    .field-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin: 10px 0;
+    }
+    /* Style spécifique pour le formulaire de suggestion */
+    #popup-sugg-form {
+        text-align: left;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    #popup-sugg-form input[type="number"] {
+        width: 100%;
+    }
+    /* Carte jeux pour exemple */
+    .games-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: center;
+        margin: 20px auto;
+        max-width: 1800px;
+        padding: 0 20px;
+    }
+
+    .game-card {
+        background: var(--card-bg);
+        border-radius: 12px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        padding: 22px 18px 18px;
+        width: 280px;
+        min-height: 180px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        position: relative;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(255,255,255,0.05);
+    }
+    .game-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        border-color: rgba(75,91,255,0.3);
+    }
+    .game-card h3 {
+        color: var(--text);
+        margin: 0 0 12px;
+        font-size: 1.2em;
+    }
+    .game-card p {
+        color: var(--text-light);
+        margin: 6px 0;
+        font-size: 0.95em;
+        line-height: 1.4;
+    }
+    .game-card strong {
+        color: var(--text);
+    }
+    .game-card .tag {
+        background: #4b5bff;
+        color: #fff;
+        padding: 2px 10px;
+        font-size: 0.9em;
+        border-radius: 4px;
+        position: absolute;
+        top: 18px; right: 15px;
+    }
+
+    .add-to-list-btn {
+        margin-top: 17px;
+        background: #45a049;
+        color: #fff;
+        padding: 8px 16px;
+        border: none; border-radius: 4px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background .18s;
+    }
+    .add-to-list-btn:hover { background: #297233; }
+
+    /* Bouton principal */
+    .btn {
+        display: inline-block;
+        background: #4b5bff; color: #fff;
+        border-radius: 4px; padding: 8px 24px; 
+        text-decoration: none;
+        font-weight: bold;
+        margin-top:12px;
+        transition: background 0.2s;
+    }
+    .btn:hover { background: #2939a8; }
+
+    /* Ajout d'un espace pour compenser la navbar fixe */
+    main {
+        margin-top: 56px;
+        padding: 20px;
+        max-width: 1800px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    /* Ajustement des sections */
+    .welcome {
+        text-align: center;
+        padding: 20px 20px;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .welcome h1 {
+        margin: 0 0 10px 0;
+    }
+    .public-games {
+        padding: 20px;
+        max-width: 1800px;
+        margin: 0 auto;
+    }
+    .public-games h2 {
+        text-align: center;
+        margin: 0 0 20px 0;
+        color: var(--text);
+    }
+
+    /* Ajustement responsive */
+    @media (max-width: 768px) {
+        .navbar {
+            padding: 0 15px;
+        }
+        .popup {
+            margin: 0 15px;
+            padding: 30px 20px 20px;
+        }
+        .games-list {
+            padding: 0 15px;
+        }
+    }
+
+    .tirage-zone {
+        background: var(--card-bg);
+        border-radius: 12px;
+        padding: 20px;
+        max-width: 600px;
+        margin: 20px auto;
+        text-align: center;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .tirage-zone h3 {
+        margin: 0 0 10px;
+        color: var(--text);
+    }
+
+    .tirage-zone p {
+        color: var(--text-light);
+        margin: 10px 0;
+    }
+
+    .tirage-result {
+        margin-top: 15px;
+        min-height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .tirage-success {
+        background: var(--primary);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 6px;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .tirage-error {
+        background: var(--accent);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 6px;
+        animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .jeu-details {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+
+    .jeu-details h4 {
+        margin-bottom: 15px;
+        color: #fff;
+    }
+
+    .badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 15px 0;
+    }
+
+    .badge {
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-size: 0.9em;
+    }
+
+    #jeu-actions {
+        margin-top: 20px;
+    }
+
+    /* Couleurs pour les durées */
+    .duree-tres-courte { background-color: #4dc9b0; }
+    .duree-courte { background-color: #3eb489; }
+    .duree-moyenne-courte { background-color: #00bcd4; }
+    .duree-moyenne { background-color: #2196f3; }
+    .duree-moyenne-longue { background-color: #9c27b0; }
+    .duree-longue { background-color: #ce93d8; }
+    .duree-tres-longue { background-color: #673ab7; }
+
+    /* Animation pour l'apparition des détails */
+    .jeu-details {
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Ajout d'espacement pour la zone de tirage */
+    .tirage-zone button {
+        margin-bottom: 20px;
+    }
+
+    .tirage-zone #resultat-tirage {
+        margin-top: 30px;
+        border-top: 1px solid rgba(255,255,255,0.1);
+        padding-top: 20px;
+    }
+
+    #popup-action {
+        width: 100%;
+        padding: 12px;
+        background: var(--primary);
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        font-size: 1em;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-top: 15px;
+    }
+
+    #popup-action:hover {
+        background: var(--primary-dark);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(75,91,255,0.2);
+    }
+</style>
+</html>
